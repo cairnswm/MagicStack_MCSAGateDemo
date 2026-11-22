@@ -1,0 +1,3 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+
+GET {{baseUrl}}/db/health

@@ -1,0 +1,44 @@
+@keystoreUrl = {{$dotenv MAGICSTACK_KEYSTORE_API}}
+<<<<<<<< HEAD:.http/keystore/apikey.http
+@tenantId = {{$dotenv TENANT_ID}}
+========
+>>>>>>>> ba334ec520a2e62cc0076bfacf3dfe7662d9b29e:.http/keys-sample/apikey.http
+
+### Validate API key against the Keystore
+GET {{keystoreUrl}}/validate/c723b678-4a87-406d-9084-7c39c7cef6f2/secrets
+Accept: application/json
+X-Tenant-ID: {{tenantId}}
+
+### Expected response:
+# {
+#   "valid": true,
+#   "value": "yoco"
+# }
+
+###
+
+### Get properties linked to an API key
+GET {{keystoreUrl}}/apikey/c723b678-4a87-406d-9084-7c39c7cef6f2/property
+Accept: application/json
+X-Tenant-ID: {{tenantId}}
+
+### Expected response:
+# {
+#   "data": [
+#     { "id": 3, "name": "environment", "value": "prod" },
+#     { "id": 4, "name": "service",     "value": "github" }
+#   ]
+# }
+
+###
+
+### Example: calling a local route protected by requireApiKey
+# GET {{keystoreUrl}}/your-route
+# Accept: application/json
+<<<<<<<< HEAD:.http/keystore/apikey.http
+# X-Tenant-ID: {{tenantId}}
+# X-APIKEY: c723b678-4a87-406d-9084-7c39c7cef6f2
+========
+# X-Tenant-ID: abf2150b-1a4d-11f1-b99c-fe88d4cc3569
+# X-APIKEY: c723b678-4a87-406d-9084-7c39c7cef6f2
+>>>>>>>> ba334ec520a2e62cc0076bfacf3dfe7662d9b29e:.http/keys-sample/apikey.http

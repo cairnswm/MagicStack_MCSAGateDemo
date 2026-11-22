@@ -1,0 +1,14 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+# Get property by identifier
+# Description: The path `/:identifier` accepts either a tenant UUID or a property name.
+# - If `:identifier` is a tenant UUID, the endpoint returns all properties for that tenant.
+# - If `:identifier` is a property name, the tenant ID must be provided via `X-Tenant-ID` header or `?tenantId=` query and the endpoint returns that property's value.
+
+### Get a single property by name (tenant via header)
+GET {{baseUrl}}/tenant/property/example
+X-Tenant-ID: {{tenantId}}
+Accept: application/json
+Authorization: Bearer {{bearerToken}}

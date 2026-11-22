@@ -1,0 +1,34 @@
+<<<<<<<< HEAD:.http/auth/validate-token.http
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### Validate JWT token
+GET https://auth.magicrunez.com/validate-api
+Authorization: Bearer {{bearerToken}}
+========
+@authUrl = {{$dotenv MAGICSTACK_AUTH_API}}
+
+### Validate JWT token
+GET {{authUrl}}/validate-api
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjc1LCJ0aWQiOiI5ZGU4YTAxMi04ZTIwLTExZjEtOWFlNy0wMDUwNTY2MWU1MTMiLCJyb2xlcyI6W10sImlhdCI6MTc4NTY0ODAyNiwiZXhwIjoxNzg4MjQwMDI2LCJhdWQiOiI5ZGU4YTAxMi04ZTIwLTExZjEtOWFlNy0wMDUwNTY2MWU1MTMtY2xpZW50IiwiaXNzIjoiOWRlOGEwMTItOGUyMC0xMWYxLTlhZTctMDA1MDU2NjFlNTEzIn0.sbX9AZOjIB9WtlFdbvVgalbIJbie9lIF5D_Z8przRdY
+>>>>>>>> ba334ec520a2e62cc0076bfacf3dfe7662d9b29e:.http/auth-sample/validate-token.http
+
+### Expected response:
+# {
+#   "valid": true,
+#   "profile": {
+#     "user": {
+#       "id": 75,
+#       "email": "cairnswm@gmail.com",
+#       "active": 1,
+#       "avatar": null,
+#       "lastname": "William",
+#       "username": "cairnswm",
+#       "firstname": "William",
+#       "tenant_id": "9de8a012-8e20-11f1-9ae7-00505661e513",
+#       "date_created": "2026-08-02 07:20:26.000000"
+#     },
+#     "roles": [],
+#     "properties": [],
+#     "user_permissions": []
+#   }
+# }
