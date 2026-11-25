@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from './AuthContext'
-import { gatesApi, type Gate, type Property } from '../api/gates'
+import { gatesApi, type Gate, type MyAccessHistory, type Property } from '../api/gates'
 
 /**
  * Shared, in-memory data for signed-in users.
@@ -9,6 +9,8 @@ import { gatesApi, type Gate, type Property } from '../api/gates'
  *    included; pages filter on `active`.
  *  - Gates: loaded on demand (`loadGates` per property, `loadMyGates` for a gate controller). Cached data stays
  *    visible while a reload runs, and every `load*` call refetches so gate codes never go stale.
+ *  - My access: the signed-in user's own property access records, loaded once for every user as soon as they are
+ *    verified (the last 30 days). `loadMoreMyAccess` widens the window; `refreshMyAccess` reloads it after a scan.
  *  - Members are private and deliberately NOT held here: the admin-only Members page and gate-controller panel
  *    fetch them when opened and drop them when closed.
  * Everything is cleared on sign-out.
@@ -25,7 +27,14 @@ interface DataValue {
   myGates: Gate[] | null
   myGatesLoading: boolean
   loadMyGates: () => Promise<void>
+  myAccess: MyAccessHistory | null
+  myAccessLoading: boolean
+  myAccessError: string | null
+  loadMoreMyAccess: () => Promise<void>
+  refreshMyAccess: () => Promise<void>
 }
+
+const ACCESS_PAGE_DAYS = 30
 
 const DataContext = createContext<DataValue | null>(null)
 
@@ -41,6 +50,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [gatesBusy, setGatesBusy] = useState<Record<number, boolean>>({})
   const [myGates, setMyGates] = useState<Gate[] | null>(null)
   const [myGatesLoading, setMyGatesLoading] = useState(false)
+
+  const [myAccess, setMyAccess] = useState<MyAccessHistory | null>(null)
+  const [myAccessBusy, setMyAccessBusy] = useState(false)
+  const [myAccessError, setMyAccessError] = useState<string | null>(null)
+  const accessRequest = useRef(0) // ignore responses that arrive after a newer request or sign-out
+
+  const loadAccess = useCallback(
+    async (days: number) => {
+      const id = ++accessRequest.current
+      setMyAccessBusy(true)
+      try {
+        const history = await api.getMyAccessHistory(days)
+        if (id === accessRequest.current) {
+          setMyAccess(history)
+          setMyAccessError(null)
+        }
+      } catch (e) {
+        if (id === accessRequest.current) setMyAccessError((e as Error).message)
+      } finally {
+        if (id === accessRequest.current) setMyAccessBusy(false)
+      }
+    },
+    [api],
+  )
+  const refreshMyAccess = useCallback(() => loadAccess(myAccess?.days ?? ACCESS_PAGE_DAYS), [loadAccess, myAccess?.days])
+  const loadMoreMyAccess = useCallback(
+    () => loadAccess((myAccess?.days ?? ACCESS_PAGE_DAYS) + ACCESS_PAGE_DAYS),
+    [loadAccess, myAccess?.days],
+  )
 
   const refreshProperties = useCallback(async () => {
     setPropertiesBusy(true)
@@ -64,10 +102,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setGates({})
       setGatesBusy({})
       setMyGates(null)
+      accessRequest.current++
+      setMyAccess(null)
+      setMyAccessBusy(false)
+      setMyAccessError(null)
       return
     }
     if (isAdmin) void refreshProperties()
   }, [token, isAdmin, refreshProperties])
+
+  // The user does not change during a session, so their own access records load once, as soon as they are verified.
+  useEffect(() => {
+    if (token) void loadAccess(ACCESS_PAGE_DAYS)
+  }, [token, loadAccess])
 
   const loadGates = useCallback(
     async (propertyId: number) => {
@@ -105,6 +152,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     myGates,
     myGatesLoading,
     loadMyGates,
+    myAccess,
+    myAccessLoading: myAccessBusy || (!!token && !myAccess && !myAccessError),
+    myAccessError,
+    loadMoreMyAccess,
+    refreshMyAccess,
   }
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }

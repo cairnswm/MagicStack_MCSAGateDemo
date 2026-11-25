@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { Loader } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useData } from '../context/DataContext'
 import { gatesApi, type AccessDirection, type GateAccess } from '../api/gates'
 
 /**
@@ -12,6 +13,7 @@ export default function AccessPage({ direction }: { direction?: AccessDirection 
   const { token: accessToken = '' } = useParams()
   const { user, token, initializing } = useAuth()
   const api = useMemo(() => gatesApi(token), [token])
+  const { refreshMyAccess } = useData()
   const [gate, setGate] = useState<GateAccess | null>(null)
   const [error, setError] = useState<string | null>(null)
   const recorded = useRef('') // one scan per page visit, even if the effect re-runs (e.g. StrictMode)
@@ -27,11 +29,14 @@ export default function AccessPage({ direction }: { direction?: AccessDirection 
     const key = `${user.user.id}:${accessToken}:${direction}`
     if (recorded.current === key) return
     recorded.current = key
-    api.recordGateAccess(accessToken, direction).then(setGate).catch((e: Error) => {
+    api.recordGateAccess(accessToken, direction).then((g) => {
+      setGate(g)
+      void refreshMyAccess() // the scan changed the user's own access records
+    }).catch((e: Error) => {
       recorded.current = ''
       setError(e.message)
     })
-  }, [api, user, accessToken, direction])
+  }, [api, user, accessToken, direction, refreshMyAccess])
 
   if (initializing) {
     return (

@@ -103,7 +103,50 @@ async function request<T>(token: string | null, method: string, path: string, bo
   return json.data as T
 }
 
+export interface PropertyAccessReportRecord extends PropertyAccess {
+  user_id: number
+  user_name: string
+  property_id: number
+  gate_id: number
+  gate_name: string | null
+  access_date: string
+}
+
+export interface PropertyAccessReport {
+  truncated: boolean
+  records: PropertyAccessReportRecord[]
+}
+
+export interface AccessNowPerson {
+  userId: number
+  userName: string
+  gateName: string | null
+  inAt: string | null
+}
+
+export interface AccessNowBucket {
+  count: number
+  people: AccessNowPerson[]
+}
+
+export interface AccessNowProperty {
+  propertyId: number
+  propertyName: string
+  todayIn: AccessNowBucket
+  todayOut: AccessNowBucket
+  yesterday: AccessNowBucket
+  week: AccessNowBucket
+  overdue: AccessNowBucket
+}
+
 export const gatesApi = (token: string | null) => ({
+  getPropertyAccessReport: (propertyId: number, from: string, to: string, gateId: number | null) =>
+    request<PropertyAccessReport>(
+      token,
+      'GET',
+      `/reports/property-access?propertyId=${propertyId}&from=${from}&to=${to}${gateId ? `&gateId=${gateId}` : ''}`,
+    ),
+  getAccessNowReport: () => request<AccessNowProperty[]>(token, 'GET', '/reports/access-now'),
   listProperties: (includeInactive: boolean) =>
     request<Property[]>(token, 'GET', `/properties?includeInactive=${includeInactive}`),
   getProperty: (id: number) => request<Property>(token, 'GET', `/properties/${id}`),

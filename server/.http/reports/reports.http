@@ -1,0 +1,23 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### Property access report (administrator): one property, date range
+GET {{baseUrl}}/reports/property-access?propertyId=1&from=2026-11-01&to=2026-11-30
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Property access report, one gate only
+GET {{baseUrl}}/reports/property-access?propertyId=1&gateId=1&from=2026-11-01&to=2026-11-30
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Property access report - missing propertyId (400)
+GET {{baseUrl}}/reports/property-access?from=2026-11-01&to=2026-11-30
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Access now: per-property counts of people on site (administrator)
+GET {{baseUrl}}/reports/access-now
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

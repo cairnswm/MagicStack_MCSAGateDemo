@@ -17,6 +17,8 @@ import AccessPage from './pages/AccessPage'
 import MembersPage from './pages/MembersPage'
 import PropertyGatesPage from './pages/PropertyGatesPage'
 import GateAuditPage from './pages/GateAuditPage'
+import PropertyAccessReportPage from './pages/PropertyAccessReportPage'
+import AccessNowPage from './pages/AccessNowPage'
 
 export default function App() {
   return (
@@ -48,6 +50,8 @@ export default function App() {
                   <Route path="/properties/:id" element={<PropertyGatesPage />} />
                   <Route path="/members" element={<MembersPage />} />
                   <Route path="/audit" element={<GateAuditPage />} />
+                  <Route path="/reports/property-access" element={<PropertyAccessReportPage />} />
+                  <Route path="/reports/access-now" element={<AccessNowPage />} />
                 </Route>
               </Route>
               <Route path="*" element={<LandingPage />} />

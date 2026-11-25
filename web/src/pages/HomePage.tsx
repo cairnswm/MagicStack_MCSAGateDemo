@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { KeyRound } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ClipboardList, KeyRound, Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { APP_NAME } from '../api/client'
 import { useData } from '../context/DataContext'
-import { gatesApi, type Gate, type MyAccessHistory as MyAccessHistoryData } from '../api/gates'
+import { gatesApi, type Gate } from '../api/gates'
 import Alert from '../components/Alert'
 import Field from '../components/Field'
 import Spinner from '../components/Spinner'
@@ -78,32 +79,14 @@ function MyGates() {
   )
 }
 
-const PAGE_DAYS = 30
-
 const formatDateTime = (value: string | null) => (value ? new Date(value).toLocaleString() : '—')
 
-/** The signed-in user's own property access records, newest first. Last 30 days; "Load more" widens the window. */
+/** The signed-in user's own property access records, newest first. Held in the data context; "Load more" widens the window. */
 function MyAccessHistory() {
-  const { token } = useAuth()
-  const api = useMemo(() => gatesApi(token), [token])
-  const [days, setDays] = useState(PAGE_DAYS)
-  const [history, setHistory] = useState<MyAccessHistoryData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const clearError = useCallback(() => setError(null), [])
-
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    api
-      .getMyAccessHistory(days)
-      .then((h) => !cancelled && setHistory(h))
-      .catch((e: Error) => !cancelled && setError(e.message))
-      .finally(() => !cancelled && setLoading(false))
-    return () => {
-      cancelled = true
-    }
-  }, [api, days])
+  const { myAccess: history, myAccessLoading: loading, myAccessError, loadMoreMyAccess } = useData()
+  const [dismissed, setDismissed] = useState<string | null>(null)
+  const error = myAccessError !== dismissed ? myAccessError : null
+  const clearError = useCallback(() => setDismissed(myAccessError), [myAccessError])
 
   return (
     <section className="space-y-3">
@@ -128,7 +111,7 @@ function MyAccessHistory() {
         )}
       </ul>
       {history?.hasMore && !loading && (
-        <button className={secondaryButton} onClick={() => setDays((d) => d + PAGE_DAYS)}>
+        <button className={secondaryButton} onClick={() => void loadMoreMyAccess()}>
           Load more
         </button>
       )}
@@ -136,13 +119,29 @@ function MyAccessHistory() {
   )
 }
 
-/** Placeholder for administrator reports, to be populated later. */
+const REPORTS = [
+  { to: '/reports/property-access', title: 'Property Access', text: 'Who entered a property, by date range and gate.', Icon: ClipboardList },
+  { to: '/reports/access-now', title: 'Access Now', text: 'Who is on each property now, and who has not signed out.', Icon: Users },
+]
+
+/** Administrator report cards. */
 function AdminReports() {
   return (
     <section className="space-y-3">
       <h2 className="text-lg font-semibold text-white">Reports</h2>
-      <div className="bg-blue-900 rounded-2xl border border-blue-800 px-4 py-6 text-sm text-blue-200">
-        Reports will appear here.
+      <div className="grid gap-3 sm:grid-cols-2">
+        {REPORTS.map(({ to, title, text, Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            className="block bg-blue-900 rounded-2xl border border-blue-800 hover:border-red-500 px-4 py-5 transition-colors"
+          >
+            <div className="flex items-center gap-2 font-semibold text-white">
+              <Icon className="w-5 text-red-500" /> {title}
+            </div>
+            <p className="mt-1 text-sm text-blue-200">{text}</p>
+          </Link>
+        ))}
       </div>
     </section>
   )

@@ -13,6 +13,7 @@ import gatesRouter from './routes/gates';
 import gateAuditRouter from './routes/gateAudit';
 import membersRouter from './routes/members';
 import accessRouter from './routes/access';
+import reportsRouter from './routes/reports';
 import gateControllersRouter from './routes/gateControllers';
 
 cache.setTenantId(process.env.TENANT_ID!);
@@ -79,6 +80,7 @@ app.use(`${BASE_PATH}/gates`, gatesRouter);
 app.use(`${BASE_PATH}/gate-audit`, gateAuditRouter);
 app.use(`${BASE_PATH}/members`, membersRouter);
 app.use(`${BASE_PATH}/access`, accessRouter);
+app.use(`${BASE_PATH}/reports`, reportsRouter);
 app.use(`${BASE_PATH}/gate-controllers`, gateControllersRouter);
 
 app.use(BASE_PATH || '/', docsRouter);
