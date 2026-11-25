@@ -2,7 +2,7 @@ import { query } from './db';
 import { AuthContext } from '../middleware/auth';
 
 /**
- * Ids of the gates the caller is linked to as a Gate Controller (via their member record).
+ * Ids of the gates the caller is linked to (via their member record), as a Gate Controller or Property Owner.
  * Looked up on every call: assignments are never cached so changes apply immediately.
  */
 export async function getAssignedGateIds(auth: Pick<AuthContext, 'tenantId' | 'userId'>): Promise<number[]> {
@@ -20,4 +20,14 @@ export async function getAssignedGateIds(auth: Pick<AuthContext, 'tenantId' | 'u
 export async function canUseGate(auth: AuthContext, gateId: number): Promise<boolean> {
   if (auth.isAdmin) return true;
   return (await getAssignedGateIds(auth)).includes(gateId);
+}
+
+export interface ReportScope {
+  /** null = unrestricted (administrator); otherwise only these gates. */
+  gateIds: number[] | null;
+}
+
+/** Gates a report caller may see: administrators all, Property Owners only the gates linked to them. */
+export async function getReportScope(auth: AuthContext): Promise<ReportScope> {
+  return { gateIds: auth.isAdmin ? null : await getAssignedGateIds(auth) };
 }

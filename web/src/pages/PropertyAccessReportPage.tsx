@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useData } from '../context/DataContext'
+import { useReportScope } from '../hooks/useReportScope'
 import { gatesApi, type PropertyAccessReport } from '../api/gates'
 import Alert from '../components/Alert'
 import Spinner from '../components/Spinner'
@@ -21,11 +21,11 @@ const inputClass =
   'w-full rounded-xl border border-blue-800 bg-blue-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500'
 const labelClass = 'block text-xs text-blue-200 mb-1'
 
-/** Administrator report: access records for one property (optionally one gate) over a date range. */
+/** Report (administrators and Property Owners): access records for one property (optionally one gate) over a date range. */
 export default function PropertyAccessReportPage() {
-  const { token, isAdmin } = useAuth()
+  const { token, canViewReports } = useAuth()
   const api = useMemo(() => gatesApi(token), [token])
-  const { properties, propertiesLoading, gatesFor, loadGates } = useData()
+  const { properties, gates: allGates, loading: propertiesLoading, error: scopeError } = useReportScope()
   const [propertyId, setPropertyId] = useState<number | null>(null)
   const [gateId, setGateId] = useState<number | null>(null)
   const [from, setFrom] = useState(daysAgo(7))
@@ -35,15 +35,10 @@ export default function PropertyAccessReportPage() {
   const [error, setError] = useState<string | null>(null)
   const clearError = useCallback(() => setError(null), [])
 
-  const activeProperties = useMemo(() => properties.filter((p) => p.active), [properties])
-  const gates = propertyId ? gatesFor(propertyId).filter((g) => g.active) : []
+  const activeProperties = properties
+  const gates = propertyId ? allGates.filter((g) => g.property_id === propertyId) : []
 
-  // Gates for the chosen property load only once a property is picked.
-  useEffect(() => {
-    if (isAdmin && propertyId) loadGates(propertyId).catch((e: Error) => setError(e.message))
-  }, [isAdmin, propertyId, loadGates])
-
-  if (!isAdmin) {
+  if (!canViewReports) {
     return <p className="text-sm text-blue-200">You do not have access to reports.</p>
   }
 
@@ -67,7 +62,7 @@ export default function PropertyAccessReportPage() {
         <ArrowLeft className="w-4" /> Home
       </Link>
       <h1 className="text-2xl font-semibold text-red-500">Property access report</h1>
-      <Alert message={error} onDismiss={clearError} />
+      <Alert message={error ?? scopeError} onDismiss={clearError} />
 
       <form onSubmit={run} className="grid sm:grid-cols-5 gap-3 items-end bg-blue-900 rounded-2xl border border-blue-800 p-4">
         <div>

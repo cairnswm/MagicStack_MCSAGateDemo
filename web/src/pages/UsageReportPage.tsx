@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useData } from '../context/DataContext'
+import { useReportScope } from '../hooks/useReportScope'
 import { gatesApi, type UsageDay, type UsageReport } from '../api/gates'
 import Alert from '../components/Alert'
 import Spinner from '../components/Spinner'
@@ -44,11 +44,11 @@ function groupByMonth(days: UsageDay[]) {
   return months
 }
 
-/** Administrator report: how many people were on site each day, and how many stayed overnight. */
+/** Report (administrators and Property Owners): how many people were on site each day, and how many stayed overnight. */
 export default function UsageReportPage() {
-  const { token, isAdmin } = useAuth()
+  const { token, canViewReports } = useAuth()
   const api = useMemo(() => gatesApi(token), [token])
-  const { properties, propertiesLoading } = useData()
+  const { properties: activeProperties, loading: propertiesLoading, error: scopeError } = useReportScope()
   const [propertyId, setPropertyId] = useState<number | null>(null)
   const [from, setFrom] = useState(daysAgo(29))
   const [to, setTo] = useState(localDate(new Date()))
@@ -56,8 +56,6 @@ export default function UsageReportPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const clearError = useCallback(() => setError(null), [])
-
-  const activeProperties = useMemo(() => properties.filter((p) => p.active), [properties])
 
   const load = useCallback(
     async (f: string, t: string, p: number | null) => {
@@ -76,12 +74,12 @@ export default function UsageReportPage() {
 
   // Show the last 30 days for all properties as soon as the page opens.
   useEffect(() => {
-    if (isAdmin) void load(daysAgo(29), localDate(new Date()), null)
-  }, [isAdmin, load])
+    if (canViewReports) void load(daysAgo(29), localDate(new Date()), null)
+  }, [canViewReports, load])
 
   const months = useMemo(() => (report ? groupByMonth(report.days) : []), [report])
 
-  if (!isAdmin) {
+  if (!canViewReports) {
     return <p className="text-sm text-blue-200">You do not have access to reports.</p>
   }
 
@@ -96,7 +94,7 @@ export default function UsageReportPage() {
         <ArrowLeft className="w-4" /> Home
       </Link>
       <h1 className="text-2xl font-semibold text-red-500">Usage report</h1>
-      <Alert message={error} onDismiss={clearError} />
+      <Alert message={error ?? scopeError} onDismiss={clearError} />
 
       <form onSubmit={run} className="grid sm:grid-cols-4 gap-3 items-end bg-blue-900 rounded-2xl border border-blue-800 p-4">
         <div>

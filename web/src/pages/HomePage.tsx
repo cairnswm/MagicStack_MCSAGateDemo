@@ -125,7 +125,7 @@ const REPORTS = [
   { to: '/reports/usage', title: 'Usage', text: 'How many people were on site each day, and overnight.', Icon: CalendarDays },
 ]
 
-/** Administrator report cards. */
+/** Report cards for administrators and Property Owners. */
 function AdminReports() {
   return (
     <section className="space-y-3">
@@ -149,7 +149,7 @@ function AdminReports() {
 }
 
 export default function HomePage() {
-  const { user, isAdmin, isGateController } = useAuth()
+  const { user, isAdmin, isGateController, canViewReports } = useAuth()
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-red-500">Welcome, {user?.user.firstname}</h1>
@@ -158,7 +158,7 @@ export default function HomePage() {
           You are signed in to {APP_NAME}. Gate check-in, occupancy and reports will appear here.
         </p>
       </div>
-      {isAdmin && <AdminReports />}
+      {canViewReports && <AdminReports />}
       {isGateController && !isAdmin && <MyGates />}
       <MyAccessHistory />
     </div>

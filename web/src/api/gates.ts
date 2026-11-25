@@ -153,7 +153,13 @@ export interface UsageReport {
   days: UsageDay[]
 }
 
+export interface ReportScope {
+  properties: { id: number; name: string }[]
+  gates: { id: number; property_id: number; name: string }[]
+}
+
 export const gatesApi = (token: string | null) => ({
+  getReportScope: () => request<ReportScope>(token, 'GET', '/reports/scope'),
   getUsageReport: (from: string, to: string, propertyId: number | null) =>
     request<UsageReport>(token, 'GET', `/reports/usage?from=${from}&to=${to}${propertyId ? `&propertyId=${propertyId}` : ''}`),
   getPropertyAccessReport: (propertyId: number, from: string, to: string, gateId: number | null) =>

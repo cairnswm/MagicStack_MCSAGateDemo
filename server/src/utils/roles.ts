@@ -1,4 +1,5 @@
 export const GATE_CONTROLLER_ROLE = 'Gate Controller';
+export const PROPERTY_OWNER_ROLE = 'Property Owner';
 // Role names that grant full administration (compared case-insensitively).
 export const ADMIN_ROLES = ['Administrator', 'Admin', 'System Administrator'];
 
@@ -16,4 +17,8 @@ export function isAdminRole(roles: string[]): boolean {
 
 export function isGateControllerRole(roles: string[]): boolean {
   return roles.some((r) => r.toLowerCase() === GATE_CONTROLLER_ROLE.toLowerCase());
+}
+
+export function isPropertyOwnerRole(roles: string[]): boolean {
+  return roles.some((r) => r.toLowerCase() === PROPERTY_OWNER_ROLE.toLowerCase());
 }

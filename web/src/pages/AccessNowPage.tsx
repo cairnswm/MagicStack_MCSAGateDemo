@@ -38,9 +38,9 @@ function People({ bucket, className }: { bucket: AccessNowBucket; className: str
   )
 }
 
-/** Administrator report: per property, how many people are on site, by how long ago they went in without going out. */
+/** Report (administrators and Property Owners): per property, how many people are on site, by how long ago they went in without going out. */
 export default function AccessNowPage() {
-  const { token, isAdmin } = useAuth()
+  const { token, canViewReports } = useAuth()
   const api = useMemo(() => gatesApi(token), [token])
   const [data, setData] = useState<AccessNowProperty[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -48,7 +48,7 @@ export default function AccessNowPage() {
   const clearError = useCallback(() => setError(null), [])
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (!canViewReports) return
     let cancelled = false
     setLoading(true)
     api
@@ -59,9 +59,9 @@ export default function AccessNowPage() {
     return () => {
       cancelled = true
     }
-  }, [api, isAdmin])
+  }, [api, canViewReports])
 
-  if (!isAdmin) {
+  if (!canViewReports) {
     return <p className="text-sm text-blue-200">You do not have access to reports.</p>
   }
 

@@ -120,5 +120,8 @@ export function useAuth() {
     ...ctx,
     isAdmin: roles.some((r) => ADMIN_ROLES.includes(r)),
     isGateController: roles.includes('gate controller'),
+    isPropertyOwner: roles.includes('property owner'),
+    /** Administrators and Property Owners may open the reports (the server limits owners to their gates). */
+    canViewReports: roles.some((r) => ADMIN_ROLES.includes(r)) || roles.includes('property owner'),
   }
 }

@@ -2,6 +2,11 @@
 @tenantId = {{$dotenv TENANT_ID}}
 @bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
 
+### Report scope: properties and gates the caller may report on (administrator or Property Owner)
+GET {{baseUrl}}/reports/scope
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
 ### Property access report (administrator): one property, date range
 GET {{baseUrl}}/reports/property-access?propertyId=1&from=2026-11-01&to=2026-11-30
 X-Tenant-ID: {{tenantId}}

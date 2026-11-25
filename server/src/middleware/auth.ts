@@ -6,7 +6,7 @@ import { getTenantId } from '../utils/tenant';
 import { log } from '../utils/requestContext';
 import { errorResponse } from '../utils/formatters';
 import { syncMemberFromUser } from '../utils/memberSync';
-import { isAdminRole, isGateControllerRole, normaliseRoles } from '../utils/roles';
+import { isAdminRole, isGateControllerRole, isPropertyOwnerRole, normaliseRoles } from '../utils/roles';
 
 export interface AuthContext {
   tenantId: string;
@@ -15,6 +15,7 @@ export interface AuthContext {
   roles: string[];
   isAdmin: boolean;
   isGateController: boolean;
+  isPropertyOwner: boolean;
 }
 
 export function getAuth(res: Response): AuthContext {
@@ -88,6 +89,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       roles,
       isAdmin: isAdminRole(roles),
       isGateController: isGateControllerRole(roles),
+      isPropertyOwner: isPropertyOwnerRole(roles),
     };
     res.locals.auth = auth;
     next();
@@ -112,4 +114,8 @@ export const adminOnly = requireAccess((a) => a.isAdmin, 'Administrator access r
 export const adminOrGateController = requireAccess(
   (a) => a.isAdmin || a.isGateController,
   'Administrator or Gate Controller access required',
+);
+export const adminOrPropertyOwner = requireAccess(
+  (a) => a.isAdmin || a.isPropertyOwner,
+  'Administrator or Property Owner access required',
 );
