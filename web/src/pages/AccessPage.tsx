@@ -5,6 +5,14 @@ import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { gatesApi, type AccessDirection, type GateAccess } from '../api/gates'
 
+const DENIED_TEXT: Record<NonNullable<GateAccess['reason']>, string> = {
+  not_member: 'No gate code is available for your account. Contact the club if you think this is a mistake.',
+  no_permit: 'You do not have a permit. Ask the property owner or an administrator for one.',
+  not_approved: 'Your permit for this property has not been approved yet.',
+  wrong_property: 'Your permit is for a different property.',
+  wrong_date: 'Your permit is not valid today.',
+}
+
 /**
  * Target of a gate's QR codes: signed-in users see the gate code, everyone else registers first.
  * The "in" and "out" codes (direction) also record the scan as a property access.
@@ -34,7 +42,7 @@ export default function AccessPage({ direction }: { direction?: AccessDirection 
     const request = direction ? client.recordGateAccess(accessToken, direction) : client.getGateAccess(accessToken)
     request.then((g) => {
       setGate(g)
-      if (direction) void latest.current.refreshMyAccess() // the scan changed the user's own access records
+      if (direction && g.granted) void latest.current.refreshMyAccess() // the scan changed the user's own access records
     }).catch((e: Error) => {
       handled.current = ''
       setError(e.message)
@@ -54,7 +62,14 @@ export default function AccessPage({ direction }: { direction?: AccessDirection 
     <div className="max-w-md mx-auto space-y-4 text-center">
       {error && <p className="text-sm text-red-400">{error}</p>}
       {!error && !gate && <Loader className="w-8 mx-auto text-red-500 animate-spin" />}
-      {gate && (
+      {gate && !gate.granted && (
+        <div className="bg-blue-900 rounded-2xl border border-red-500 px-6 py-8 shadow-sm space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-blue-200">{gate.propertyName ?? 'Gate'}</p>
+          <h1 className="text-2xl font-semibold text-red-500">{gate.gateName}</h1>
+          <p className="text-sm text-white">{DENIED_TEXT[gate.reason ?? 'not_member']}</p>
+        </div>
+      )}
+      {gate && gate.granted && (
         <div className="bg-blue-900 rounded-2xl border border-blue-800 px-6 py-8 shadow-sm space-y-3">
           {direction && (
             <p className="text-sm font-medium text-green-400">Checked {direction === 'in' ? 'in' : 'out'}</p>

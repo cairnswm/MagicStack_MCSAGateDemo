@@ -11,8 +11,10 @@ import { linkClass, primaryButton } from '../components/buttonStyles'
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
-  const next = safeNext(useSearchParams()[0].get('next'))
-  const [form, setForm] = useState({ firstname: '', lastname: '', username: '', email: '', password: '' })
+  const [params] = useSearchParams()
+  const next = safeNext(params.get('next'))
+  // A permit invite link passes the invited email so the new account matches it.
+  const [form, setForm] = useState({ firstname: '', lastname: '', username: '', email: params.get('email') ?? '', password: '' })
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 

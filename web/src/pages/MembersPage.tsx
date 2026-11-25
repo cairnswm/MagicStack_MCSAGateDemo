@@ -97,6 +97,9 @@ export default function MembersPage() {
               <div>
                 <div className={m.active ? 'font-medium' : 'font-medium line-through opacity-60'}>
                   {m.member_number} · {name || 'Not signed in yet'}
+                  {m.member_type === 'permit' && (
+                    <span className="ml-2 rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-300">Permit</span>
+                  )}
                 </div>
                 <div className="text-xs text-blue-200">{m.email} · {m.phone}</div>
               </div>

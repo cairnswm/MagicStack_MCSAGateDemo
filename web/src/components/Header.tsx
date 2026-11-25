@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import Logo from './Logo'
 
 export default function Header() {
-  const { user, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin, canViewReports } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -39,6 +39,11 @@ export default function Header() {
           {isAdmin && (
             <Link to="/members" className="text-sm font-medium text-white hover:text-red-400 transition-colors">
               Members
+            </Link>
+          )}
+          {canViewReports && (
+            <Link to="/permits" className="text-sm font-medium text-white hover:text-red-400 transition-colors">
+              Permits
             </Link>
           )}
         </div>

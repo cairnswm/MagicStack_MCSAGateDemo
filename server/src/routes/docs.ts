@@ -148,6 +148,19 @@ router.get('/', (_req: Request, res: Response) => {
         </div>
       </section>
 
+      <section class="doc-card">
+        <div class="doc-card-header">
+          <span class="http-method GET">GET</span>
+          <div>
+            <div class="endpoint-path">/permits</div>
+            <div class="doc-card-title">Permit applications</div>
+          </div>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-description">Administrators and Property Owners invite a visitor to a property for a date range; the visitor registers and completes their details through the invite link; an administrator or the property&rsquo;s owner approves. Only an approved, in-date permit for the gate&rsquo;s property lets a permit holder see the gate code. <a href="${docsPath}/permits">Full details</a>.</p>
+        </div>
+      </section>
+
     </main>
   `);
 
@@ -167,6 +180,7 @@ router.get('/health', (_req: Request, res: Response) => {
       <a href="${docsPath}/">Home</a>
       <a href="${docsPath}/db-health">Database</a>
       <a href="${docsPath}/gates">Gates</a>
+      <a href="${docsPath}/permits">Permits</a>
     </nav>
 
     <main class="content-shell">
@@ -206,6 +220,7 @@ router.get('/db-health', (_req: Request, res: Response) => {
       <a href="${docsPath}/">Home</a>
       <a href="${docsPath}/health">Health</a>
       <a href="${docsPath}/gates">Gates</a>
+      <a href="${docsPath}/permits">Permits</a>
     </nav>
 
     <main class="content-shell">
@@ -252,6 +267,7 @@ router.get('/gates', (_req: Request, res: Response) => {
       <a href="${docsPath}/">Home</a>
       <a href="${docsPath}/health">Health</a>
       <a href="${docsPath}/db-health">Database</a>
+      <a href="${docsPath}/permits">Permits</a>
     </nav>
 
     <main class="content-shell">
@@ -274,8 +290,8 @@ router.get('/gates', (_req: Request, res: Response) => {
       ${endpointCard('GET', '/gates/:id/access-token', 'Get gate QR link', 'Administrator only. The long random access token for the gate and the public link plus <code>inUrl</code> / <code>outUrl</code>: each gate has two QR codes, one encoding the in link and one the out link. Created on first use if missing. Never cached.', none, { data: { accessToken: '<64-character token>', url: 'https://mcsagate.runeworkz.com/access/<64-character token>', inUrl: '<url>/in', outUrl: '<url>/out' } })}
       ${endpointCard('POST', '/gates/:id/access-token/regenerate', 'Regenerate gate QR link', 'Administrator only. Permanently invalidates every printed QR code for the gate. <code>confirmGateName</code> must equal the gate name exactly (<code>400</code> otherwise). Audited as <code>regenerate</code>.', json({ confirmGateName: 'Main gate' }), { data: { accessToken: '<new 64-character token>', url: 'https://mcsagate.runeworkz.com/access/<new 64-character token>', inUrl: '<url>/in', outUrl: '<url>/out' } })}
       ${endpointCard('GET', '/access/mine', 'My access history', 'Any signed-in user. The caller\'s own <code>property_access</code> records, newest first, for the last <code>?days=</code> days (default 30, maximum 3650). Ask for a larger window to load more; <code>hasMore</code> is true when older records exist. No gate codes. <code>no-store</code>.', `<p class="muted">${authNote}</p>`, { data: { days: 30, hasMore: false, records: [{ id: 1, property_id: 1, property_name: 'Hilltop Club', gate_id: 1, gate_name: 'Main gate', access_date: '2026-11-25', status: 'in', in_at: '2026-11-25T08:00:00', out_at: null }] } })}
-      ${endpointCard('GET', '/access/:token', 'Resolve a QR link', 'Any signed-in user. Returns the gate behind a scanned QR token with its current code; <code>404</code> if the token is unknown, regenerated or the gate is inactive. Responses are <code>Cache-Control: no-store</code>.', `<p class="muted">${authNote}</p>`, { data: { gateId: 1, gateName: 'Main gate', propertyName: 'Hilltop Club', code: '1234' } })}
-      ${endpointCard('POST', '/access/:token/in', 'Record a gate scan (in or out)', 'Any signed-in user. Also available as <code>/access/:token/out</code>. Records the caller in <code>property_access</code>: one row per user, gate and day, so the in and out scans of a day share one record. <code>in</code> keeps the first <code>in_at</code> of the day and clears <code>out_at</code> (re-entering means the person is in again), <code>out</code> sets <code>out_at</code> to the latest scan, and <code>status</code> is the most recent direction. Repeat scans are harmless (not idempotent by design). POST so link previews cannot create records. Returns the gate and its code; <code>404</code> if the token is unknown. <code>no-store</code>.', `<p class="muted">${authNote}</p>`, { data: { gateId: 1, gateName: 'Main gate', propertyName: 'Hilltop Club', code: '1234', direction: 'in', access: { id: 1, user_id: 7, user_name: 'Sam Member', property_id: 1, gate_id: 1, access_date: '2026-11-25', status: 'in', in_at: '2026-11-25T08:00:00', out_at: null } } })}
+      ${endpointCard('GET', '/access/:token', 'Resolve a QR link', 'Any signed-in user. Returns the gate behind a scanned QR token. <code>code</code> is included only when <code>granted</code> is true: administrators, Gate Controllers / Property Owners linked to the gate and regular members always; a permit holder only with an approved permit for the gate&rsquo;s property whose dates include today. Otherwise <code>granted</code> is false, <code>code</code> is null and <code>reason</code> is one of <code>not_member</code>, <code>no_permit</code>, <code>wrong_property</code>, <code>not_approved</code>, <code>wrong_date</code>. <code>404</code> if the token is unknown, regenerated or the gate is inactive. Responses are <code>Cache-Control: no-store</code>.', `<p class="muted">${authNote}</p>`, { data: { gateId: 1, gateName: 'Main gate', propertyName: 'Hilltop Club', granted: true, reason: null, code: '1234' } })}
+      ${endpointCard('POST', '/access/:token/in', 'Record a gate scan (in or out)', 'Any signed-in user. Also available as <code>/access/:token/out</code>. Records the caller in <code>property_access</code>: one row per user, gate and day, so the in and out scans of a day share one record. <code>in</code> keeps the first <code>in_at</code> of the day and clears <code>out_at</code> (re-entering means the person is in again), <code>out</code> sets <code>out_at</code> to the latest scan, and <code>status</code> is the most recent direction. Repeat scans are harmless (not idempotent by design). POST so link previews cannot create records. Returns the gate and its code under the same rules as <code>GET /access/:token</code>; when not <code>granted</code> nothing is recorded and <code>access</code> is null. <code>404</code> if the token is unknown. <code>no-store</code>.', `<p class="muted">${authNote}</p>`, { data: { gateId: 1, gateName: 'Main gate', propertyName: 'Hilltop Club', granted: true, reason: null, code: '1234', direction: 'in', access: { id: 1, user_id: 7, user_name: 'Sam Member', property_id: 1, gate_id: 1, access_date: '2026-11-25', status: 'in', in_at: '2026-11-25T08:00:00', out_at: null } } })}
       ${endpointCard('GET', '/reports/scope', 'Report scope', 'Administrator or Property Owner. The active properties and gates the caller may report on (no gate codes): everything for an administrator, only the gates linked to them (and the properties of those gates) for a Property Owner. Used to fill the report dropdowns. <code>no-store</code>.', `<p class="muted">${authNote}</p>`, { data: { properties: [{ id: 1, name: 'Hilltop Club' }], gates: [{ id: 1, property_id: 1, name: 'Main gate' }] } })}
       ${endpointCard('GET', '/reports/property-access', 'Property access report', 'Administrator, or a Property Owner (limited to the gates linked to them). Access records for one property between <code>from</code> and <code>to</code> (<code>YYYY-MM-DD</code>, inclusive), newest first, optionally limited to one <code>gateId</code>. <code>propertyId</code>, <code>from</code> and <code>to</code> are required (<code>400</code> otherwise). At most 5000 records; <code>truncated</code> is true if there were more. No gate codes. <code>no-store</code>.', `<p class="muted">${authNote}</p>`, { data: { truncated: false, records: [{ id: 1, user_id: 7, user_name: 'Sam Member', property_id: 1, gate_id: 1, gate_name: 'Main gate', access_date: '2026-11-25', status: 'in', in_at: '2026-11-25T08:00:00', out_at: null }] } })}
       ${endpointCard('GET', '/reports/access-now', 'Access now report', 'Administrator, or a Property Owner (limited to the gates linked to them). One entry per active property with distinct-people counts (and the people) in five buckets: <code>todayIn</code> (entered today, still in), <code>todayOut</code> (entered today, has left), <code>yesterday</code> (entered yesterday, not out), <code>week</code> (entered 2 to 7 days ago, not out) and <code>overdue</code> (entered more than 7 days ago, not out). Each in scan is paired with the next out scan by the same person at the property (which may be on a later day); not out means no such out scan yet. <code>no-store</code>.', `<p class="muted">${authNote}</p>`, { data: [{ propertyId: 1, propertyName: 'Hilltop Club', todayIn: { count: 1, people: [{ userId: 7, userName: 'Sam Member', gateName: 'Main gate', inAt: '2026-11-25T08:00:00' }] }, todayOut: { count: 0, people: [] }, yesterday: { count: 0, people: [] }, week: { count: 0, people: [] }, overdue: { count: 0, people: [] } }] })}
@@ -299,6 +315,45 @@ router.get('/gates', (_req: Request, res: Response) => {
       ${endpointCard('GET', '/gate-controllers', 'List gate controllers', 'Members linked to a gate. <code>?gateId=</code> is required.', `<p class="muted">${authNote}</p>`, { data: [{ id: 1, gate_id: 1, member_id: 1, active: 1, member_number: 'M-1001', first_name: 'Jane', last_name: 'Doe', email: 'jane@example.com' }] })}
       ${endpointCard('POST', '/gate-controllers', 'Link member to gate', '<code>gateId</code> and an active <code>memberId</code>. Idempotent. Returns <code>201</code> and the gate&rsquo;s links.', json({ gateId: 1, memberId: 1 }), { data: [{ id: 1, gate_id: 1, member_id: 1, active: 1, member_number: 'M-1001', first_name: 'Jane', last_name: 'Doe', email: 'jane@example.com' }] })}
       ${endpointCard('DELETE', '/gate-controllers/:id', 'Unlink member from gate', 'Deactivates the link and returns the gate&rsquo;s remaining links.', none, { data: [] })}
+    </main>
+  `);
+
+  res.type('html').send(page);
+});
+
+router.get('/permits', (_req: Request, res: Response) => {
+  const none = '<p class="muted">No body.</p>';
+  const json = (body: unknown) => `<pre class="code-block">${JSON.stringify(body, null, 2)}</pre>`;
+  const permitExample = { id: 1, property_id: 1, property_name: 'Hilltop Club', member_id: 12, member_number: 'Permit1012', first_name: 'Sam', last_name: 'Visitor', phone: '0821234567', email: 'sam@example.com', invite_token: '<64-character token>', valid_from: '2026-12-01', valid_to: '2026-12-03', status: 'submitted', created_by_name: 'Jane Doe', submitted_at: '2026-11-25T08:00:00.000Z', decided_by_name: null, decided_at: null, created_at: '2026-11-25T07:00:00.000Z', linkPath: '/permit/<64-character token>' };
+  const page = renderPage('Permits Docs', `
+    <header class="site-header">
+      <img src="${basePath}/logo.svg" alt="MagicStack logo" class="site-logo" />
+      <span class="base-url">${docsPath}</span>
+      <h1>Permit applications</h1>
+      <p>A permit is for a property (not a gate), for a date range, held by a temporary member numbered <code>Permit&lt;1000 + member id&gt;</code>.</p>
+    </header>
+
+    <nav class="site-nav">
+      <a href="${docsPath}/">Home</a>
+      <a href="${docsPath}/health">Health</a>
+      <a href="${docsPath}/db-health">Database</a>
+      <a href="${docsPath}/gates">Gates</a>
+    </nav>
+
+    <main class="content-shell">
+      <section class="surface">
+        <h3>Flow</h3>
+        <p>1. An <code>Administrator</code>, or a <code>Property Owner</code> for a property of a gate linked to them, creates a permit (<code>invited</code>) and sends the returned link (<code>linkPath</code>, opened in the web app) to the invitee. 2. The invitee registers or signs in with the <strong>same email</strong> (the member is linked by email at sign-in) and submits their details (<code>submitted</code>). 3. An administrator or the property&rsquo;s owner approves or rejects. The same email asking again reuses the same temporary member and number. An email that already belongs to a regular member is refused. Records are deactivated, never deleted.</p>
+        <p>${authNote} Callers outside the permit&rsquo;s property scope receive <code>403</code> on create and <code>404</code> on approve, reject and cancel.</p>
+      </section>
+
+      ${endpointCard('GET', '/permits/invite/:token', 'View an invite', 'No authentication required (tenant header only); the token is the secret. Shows what the invite link page needs before sign-in. <code>404</code> if the token is unknown. <code>no-store</code>.', '<p class="muted">Headers: <code>X-Tenant-ID</code>.</p>', { data: { propertyName: 'Hilltop Club', email: 'sam@example.com', validFrom: '2026-12-01', validTo: '2026-12-03', status: 'invited' } })}
+      ${endpointCard('GET', '/permits', 'List permits', 'Administrator or Property Owner. Administrators see all permits, owners only those of their own properties. Optional <code>?status=</code> (<code>invited, submitted, approved, rejected, cancelled</code>; <code>400</code> otherwise). Newest first. <code>no-store</code>.', `<p class="muted">${authNote}</p>`, { data: [permitExample] })}
+      ${endpointCard('POST', '/permits', 'Create a permit', 'Administrator or Property Owner. <code>propertyId</code>, a valid <code>email</code> and <code>validFrom</code> / <code>validTo</code> (<code>YYYY-MM-DD</code>, inclusive, not already over) are required (<code>400</code>). <code>403</code> for a property outside the owner&rsquo;s scope, <code>404</code> for an unknown property, <code>400</code> if the email belongs to a regular member. Returns <code>201</code>.', json({ propertyId: 1, email: 'sam@example.com', validFrom: '2026-12-01', validTo: '2026-12-03' }), { data: { ...permitExample, status: 'invited' } })}
+      ${endpointCard('POST', '/permits/invite/:token/submit', 'Submit my details', 'Any signed-in user, but only the user linked to the permit&rsquo;s member (<code>403</code> otherwise: sign in with the invited email). Only while the permit is <code>invited</code> and not over (<code>400</code>). <code>firstName</code>, <code>lastName</code> and <code>phone</code> are required.', json({ firstName: 'Sam', lastName: 'Visitor', phone: '0821234567' }), { data: { status: 'submitted' } })}
+      ${endpointCard('POST', '/permits/:id/approve', 'Approve a permit', 'Administrator or the property&rsquo;s Property Owner. Only a <code>submitted</code> permit whose period is not over (<code>400</code> otherwise). Records who and when. <code>404</code> if missing or out of scope.', none, { data: { ...permitExample, status: 'approved', decided_by_name: 'Jane Doe' } })}
+      ${endpointCard('POST', '/permits/:id/reject', 'Reject a permit', 'Administrator or the property&rsquo;s Property Owner. From <code>invited</code> or <code>submitted</code>.', none, { data: { ...permitExample, status: 'rejected', decided_by_name: 'Jane Doe' } })}
+      ${endpointCard('POST', '/permits/:id/cancel', 'Cancel a permit', 'Administrator or the property&rsquo;s Property Owner. From <code>invited</code>, <code>submitted</code> or <code>approved</code>; a cancelled permit no longer opens any gate.', none, { data: { ...permitExample, status: 'cancelled', decided_by_name: 'Jane Doe' } })}
     </main>
   `);
 

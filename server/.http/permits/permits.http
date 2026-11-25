@@ -1,0 +1,54 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+@inviteToken = <paste the invite token from the create response>
+
+### Create a permit (Administrator, or Property Owner for their own property)
+POST {{baseUrl}}/permits
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "propertyId": 1, "email": "sam@example.com", "validFrom": "2026-12-01", "validTo": "2026-12-03" }
+
+### List permits (Administrator or Property Owner; optional ?status=submitted)
+GET {{baseUrl}}/permits
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### List submitted permits awaiting approval
+GET {{baseUrl}}/permits?status=submitted
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### View an invite (public: no bearer token)
+GET {{baseUrl}}/permits/invite/{{inviteToken}}
+X-Tenant-ID: {{tenantId}}
+
+### Submit my details (token of the user registered with the invited email)
+POST {{baseUrl}}/permits/invite/{{inviteToken}}/submit
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "firstName": "Sam", "lastName": "Visitor", "phone": "0821234567" }
+
+### Approve a permit (Administrator or the property's owner)
+POST {{baseUrl}}/permits/1/approve
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Reject a permit
+POST {{baseUrl}}/permits/1/reject
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Cancel a permit
+POST {{baseUrl}}/permits/1/cancel
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Scan as the permit holder: code only with an approved, in-date permit for the property
+GET {{baseUrl}}/access/<gate access token>
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

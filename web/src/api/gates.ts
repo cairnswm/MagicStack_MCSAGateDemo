@@ -24,6 +24,7 @@ export interface Member {
   first_name: string | null
   last_name: string | null
   user_id: number | null
+  member_type: 'member' | 'permit'
   active: number
 }
 
@@ -71,6 +72,9 @@ export interface GateAccess {
   gateId: number
   gateName: string
   propertyName: string | null
+  /** False when the caller may not see the code (e.g. no approved permit for this property today). */
+  granted: boolean
+  reason: 'not_member' | 'no_permit' | 'not_approved' | 'wrong_property' | 'wrong_date' | null
   code: string | null
 }
 
@@ -84,7 +88,7 @@ export interface AuditEntry {
   changed_at: string
 }
 
-async function request<T>(token: string | null, method: string, path: string, body?: unknown): Promise<T> {
+export async function request<T>(token: string | null, method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { 'X-Tenant-ID': TENANT_ID }
   if (token) headers.Authorization = `Bearer ${token}`
   if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -203,7 +207,7 @@ export const gatesApi = (token: string | null) => ({
   getGateAccess: (accessToken: string) =>
     request<GateAccess>(token, 'GET', `/access/${encodeURIComponent(accessToken)}`),
   recordGateAccess: (accessToken: string, direction: AccessDirection) =>
-    request<GateAccess & { direction: AccessDirection; access: PropertyAccess }>(
+    request<GateAccess & { direction: AccessDirection; access: PropertyAccess | null }>(
       token,
       'POST',
       `/access/${encodeURIComponent(accessToken)}/${direction}`,

@@ -75,12 +75,41 @@ CREATE TABLE IF NOT EXISTS members (
   first_name VARCHAR(100) NULL,
   last_name VARCHAR(100) NULL,
   user_id INT NULL,                  -- auth user id, set on first validated request with a matching email
+  member_type VARCHAR(16) NOT NULL DEFAULT 'member',  -- 'member' | 'permit' (temporary, numbered Permit<1000+id>)
   active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_members_number (tenant_id, member_number),
   KEY idx_members_email (tenant_id, email),
   KEY idx_members_user (tenant_id, user_id)
+);
+
+-- Existing databases: ALTER TABLE members ADD COLUMN member_type VARCHAR(16) NOT NULL DEFAULT 'member' AFTER user_id;
+
+-- Permit applications for a PROPERTY (not a gate). Flow: invited -> submitted (by the holder) -> approved/rejected.
+-- The holder is a members row with member_type 'permit', reused if the same email asks again.
+CREATE TABLE IF NOT EXISTS permits (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL,
+  property_id INT UNSIGNED NOT NULL,
+  member_id INT UNSIGNED NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  invite_token VARCHAR(128) NOT NULL,  -- secret in the invite link
+  valid_from DATE NOT NULL,
+  valid_to DATE NOT NULL,              -- inclusive
+  status VARCHAR(16) NOT NULL DEFAULT 'invited',  -- invited | submitted | approved | rejected | cancelled
+  created_by_user_id INT NOT NULL,
+  created_by_name VARCHAR(255) NOT NULL,
+  submitted_at DATETIME NULL,
+  decided_by_user_id INT NULL,
+  decided_by_name VARCHAR(255) NULL,
+  decided_at DATETIME NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_permits_token (invite_token),
+  KEY idx_permits_tenant (tenant_id, status, property_id),
+  KEY idx_permits_member (tenant_id, member_id, property_id, status)
 );
 
 -- Which members control which gates. A Gate Controller only sees and edits the gates linked here.

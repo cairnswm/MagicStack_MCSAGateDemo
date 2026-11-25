@@ -15,6 +15,8 @@ import membersRouter from './routes/members';
 import accessRouter from './routes/access';
 import reportsRouter from './routes/reports';
 import gateControllersRouter from './routes/gateControllers';
+import permitsRouter from './routes/permits';
+import permitInvitesRouter from './routes/permitInvites';
 
 cache.setTenantId(process.env.TENANT_ID!);
 if (process.env.MAGICSTACK_CACHEY_API) {
@@ -82,6 +84,8 @@ app.use(`${BASE_PATH}/members`, membersRouter);
 app.use(`${BASE_PATH}/access`, accessRouter);
 app.use(`${BASE_PATH}/reports`, reportsRouter);
 app.use(`${BASE_PATH}/gate-controllers`, gateControllersRouter);
+app.use(`${BASE_PATH}/permits/invite`, permitInvitesRouter); // before /permits: its GET is public
+app.use(`${BASE_PATH}/permits`, permitsRouter);
 
 app.use(BASE_PATH || '/', docsRouter);
 app.use(`${BASE_PATH}/docs`, docsRouter);

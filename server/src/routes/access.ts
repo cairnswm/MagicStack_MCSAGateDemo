@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { query } from '../utils/db';
 import { errorResponse, successResponse } from '../utils/formatters';
 import { getAuth, requireAuth } from '../middleware/auth';
+import { CodeAccess, getGateCodeAccess } from '../utils/gateEntitlement';
 
 const router = Router();
 router.use(requireAuth as any);
@@ -20,11 +21,14 @@ async function findGateByToken(tenantId: string, token: string) {
   return rows[0] ?? null;
 }
 
-const gateView = (gate: any) => ({
+// The code is only included when `access.granted`; a denied caller gets the gate name and a reason instead.
+const gateView = (gate: any, access: CodeAccess) => ({
   gateId: gate.id,
   gateName: gate.name,
   propertyName: gate.property_name,
-  code: gate.code,
+  granted: access.granted,
+  reason: access.reason ?? null,
+  code: access.granted ? gate.code : null,
 });
 
 // GET /mine?days=30 - the caller's own access records, newest first, for the last `days` days (default 30, max 3650).
@@ -57,14 +61,16 @@ router.get('/mine', async (req: Request, res: Response) => {
   }
 });
 
-// GET /:token - the gate behind a scanned QR link, with its current code. Any signed-in user. Records nothing.
-// The response contains the gate code, so it must never be cached (here or by a browser/proxy).
+// GET /:token - the gate behind a scanned QR link, with its current code if the caller is entitled to it
+// (admin, assigned controller/owner, member, or permit holder with an approved in-date permit for the property).
+// Records nothing. The response may contain the gate code, so it must never be cached (here or by a browser/proxy).
 router.get('/:token', async (req: Request, res: Response) => {
   try {
-    const gate = await findGateByToken(getAuth(res).tenantId, req.params.token);
+    const auth = getAuth(res);
+    const gate = await findGateByToken(auth.tenantId, req.params.token);
     if (!gate) return res.status(404).json(errorResponse('This access link is not valid'));
     res.set('Cache-Control', 'no-store');
-    return res.json(successResponse(gateView(gate)));
+    return res.json(successResponse(gateView(gate, await getGateCodeAccess(auth, gate))));
   } catch (err) {
     return fail(res, err);
   }
@@ -82,6 +88,12 @@ function recordScan(direction: 'in' | 'out') {
       const auth = getAuth(res);
       const gate = await findGateByToken(auth.tenantId, req.params.token);
       if (!gate) return res.status(404).json(errorResponse('This access link is not valid'));
+      // Not entitled (e.g. no approved permit for this property today): no code and no visit is recorded.
+      const access = await getGateCodeAccess(auth, gate);
+      if (!access.granted) {
+        res.set('Cache-Control', 'no-store');
+        return res.json(successResponse({ ...gateView(gate, access), direction, access: null }));
+      }
       // Atomic upsert on uq_access_visit; CURDATE()/NOW() come from the DB so the day boundary is consistent.
       await query(
         `INSERT INTO property_access
@@ -99,7 +111,7 @@ function recordScan(direction: 'in' | 'out') {
         [auth.tenantId, auth.userId, gate.id],
       );
       res.set('Cache-Control', 'no-store');
-      return res.json(successResponse({ ...gateView(gate), direction, access: rows[0] }));
+      return res.json(successResponse({ ...gateView(gate, access), direction, access: rows[0] }));
     } catch (err) {
       return fail(res, err);
     }

@@ -20,6 +20,8 @@ import GateAuditPage from './pages/GateAuditPage'
 import PropertyAccessReportPage from './pages/PropertyAccessReportPage'
 import UsageReportPage from './pages/UsageReportPage'
 import AccessNowPage from './pages/AccessNowPage'
+import PermitsPage from './pages/PermitsPage'
+import PermitInvitePage from './pages/PermitInvitePage'
 
 export default function App() {
   return (
@@ -42,6 +44,8 @@ export default function App() {
                 <Route path="/access/:token" element={<AccessPage />} />
                 <Route path="/access/:token/in" element={<AccessPage direction="in" />} />
                 <Route path="/access/:token/out" element={<AccessPage direction="out" />} />
+                {/* Permit invite links: public to view, sign-in needed to submit. */}
+                <Route path="/permit/:token" element={<PermitInvitePage />} />
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppLayout />}>
@@ -50,6 +54,7 @@ export default function App() {
                   <Route path="/properties" element={<PropertiesPage />} />
                   <Route path="/properties/:id" element={<PropertyGatesPage />} />
                   <Route path="/members" element={<MembersPage />} />
+                  <Route path="/permits" element={<PermitsPage />} />
                   <Route path="/audit" element={<GateAuditPage />} />
                   <Route path="/reports/property-access" element={<PropertyAccessReportPage />} />
                   <Route path="/reports/access-now" element={<AccessNowPage />} />

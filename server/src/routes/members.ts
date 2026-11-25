@@ -6,7 +6,7 @@ import { adminOnly, getAuth, requireAuth } from '../middleware/auth';
 const router = Router();
 router.use(requireAuth as any);
 
-const COLUMNS = 'id, member_number, email, phone, first_name, last_name, user_id, active, created_at, updated_at';
+const COLUMNS = 'id, member_number, email, phone, first_name, last_name, user_id, member_type, active, created_at, updated_at';
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const fail = (res: Response, err: unknown) =>
@@ -117,6 +117,9 @@ router.put('/:id', async (req: Request, res: Response) => {
     const phone = b.phone === undefined ? member.phone : cleanText(b.phone, 32);
     const active = b.active === undefined ? member.active : b.active ? 1 : 0;
     if (!memberNumber) return res.status(400).json(errorResponse('memberNumber must not be empty'));
+    if (member.member_type === 'permit' && memberNumber !== member.member_number) {
+      return res.status(400).json(errorResponse('A permit holder keeps the generated Permit number'));
+    }
     if (!email || !EMAIL.test(email)) return res.status(400).json(errorResponse('a valid email is required'));
     if (!phone) return res.status(400).json(errorResponse('phone must not be empty'));
     if (await numberTaken(tenantId, memberNumber, id)) {
