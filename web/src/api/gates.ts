@@ -139,7 +139,22 @@ export interface AccessNowProperty {
   overdue: AccessNowBucket
 }
 
+export interface UsageDay {
+  date: string
+  count: number
+  overnight: number
+}
+
+export interface UsageReport {
+  from: string
+  to: string
+  propertyId: number | null
+  days: UsageDay[]
+}
+
 export const gatesApi = (token: string | null) => ({
+  getUsageReport: (from: string, to: string, propertyId: number | null) =>
+    request<UsageReport>(token, 'GET', `/reports/usage?from=${from}&to=${to}${propertyId ? `&propertyId=${propertyId}` : ''}`),
   getPropertyAccessReport: (propertyId: number, from: string, to: string, gateId: number | null) =>
     request<PropertyAccessReport>(
       token,

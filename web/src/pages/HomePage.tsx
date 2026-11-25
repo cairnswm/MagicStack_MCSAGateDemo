@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardList, KeyRound, Users } from 'lucide-react'
+import { CalendarDays, ClipboardList, KeyRound, Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { APP_NAME } from '../api/client'
 import { useData } from '../context/DataContext'
@@ -122,6 +122,7 @@ function MyAccessHistory() {
 const REPORTS = [
   { to: '/reports/property-access', title: 'Property Access', text: 'Who entered a property, by date range and gate.', Icon: ClipboardList },
   { to: '/reports/access-now', title: 'Access Now', text: 'Who is on each property now, and who has not signed out.', Icon: Users },
+  { to: '/reports/usage', title: 'Usage', text: 'How many people were on site each day, and overnight.', Icon: CalendarDays },
 ]
 
 /** Administrator report cards. */

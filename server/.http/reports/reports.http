@@ -21,3 +21,18 @@ Authorization: Bearer {{bearerToken}}
 GET {{baseUrl}}/reports/access-now
 X-Tenant-ID: {{tenantId}}
 Authorization: Bearer {{bearerToken}}
+
+### Usage: people per day, last 30 days, all properties (administrator)
+GET {{baseUrl}}/reports/usage
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Usage for one property and date range
+GET {{baseUrl}}/reports/usage?propertyId=1&from=2026-11-01&to=2026-11-30
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Usage - from after to (400)
+GET {{baseUrl}}/reports/usage?from=2026-11-30&to=2026-11-01
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
