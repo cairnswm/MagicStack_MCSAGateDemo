@@ -1,0 +1,37 @@
+{
+  "sections": [
+    {
+      "type": "hero",
+      "title": "Secure gate access for your club",
+      "subtitle": "Scan a QR code to check in and out, always know who is on the property, and keep gate combinations safe.",
+      "primaryCta": { "label": "Login", "to": "/login" },
+      "secondaryCta": { "label": "Register", "to": "/register" }
+    },
+    {
+      "type": "benefits",
+      "title": "Why clubs choose us",
+      "items": [
+        { "icon": "QrCode", "title": "QR check-in", "text": "Members and permit holders check in and out at the gate in seconds." },
+        { "icon": "KeyRound", "title": "Monthly combinations", "text": "Gate combinations rotate monthly and are only shown to authorised people." },
+        { "icon": "Users", "title": "Live occupancy", "text": "See who is on the property right now, and who is overdue to leave." },
+        { "icon": "ShieldCheck", "title": "Role-based access", "text": "Administrators, gate controllers, members and permit holders each see what they need." }
+      ]
+    },
+    {
+      "type": "steps",
+      "title": "How it works",
+      "items": [
+        { "title": "Register", "text": "Create your account and get your personal QR code." },
+        { "title": "Scan at the gate", "text": "Check in on arrival and check out when you leave." },
+        { "title": "Stay informed", "text": "Controllers and administrators get occupancy and history reports." }
+      ]
+    },
+    {
+      "type": "cta",
+      "title": "Ready to get started?",
+      "text": "Log in or create an account to continue.",
+      "primaryCta": { "label": "Login", "to": "/login" },
+      "secondaryCta": { "label": "Register", "to": "/register" }
+    }
+  ]
+}

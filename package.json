@@ -1,0 +1,20 @@
+{
+  "name": "mcsa-gate-demo",
+  "private": true,
+  "description": "Club Property Access Management - monorepo (server API + web front end)",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "install:all": "npm --prefix server install && npm --prefix web install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:web": "npm --prefix web run dev",
+    "build:server": "npm --prefix server run build",
+    "build:web": "npm --prefix web run build",
+    "build": "npm run build:server && npm run build:web",
+    "deploy:server": "npm --prefix server run deploy",
+    "publish:server": "npm --prefix server run publish",
+    "deploy:web": "npm --prefix web run deploy",
+    "publish:web": "npm --prefix web run publish",
+    "deploy": "npm run deploy:server && npm run deploy:web",
+    "publish": "npm run publish:server && npm run publish:web"
+  }
+}

@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### Gate code audit, all gates (Administrator)
+GET {{baseUrl}}/gate-audit
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Gate code audit for one gate
+GET {{baseUrl}}/gate-audit?gateId=1&limit=50
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

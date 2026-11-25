@@ -29,7 +29,7 @@ npm run build
 ```
 
 This will:
-- Compile TypeScript files to `dist/js/`
+- Typecheck, then bundle `src/` into a single `dist/index.js` (esbuild)
 - Copy `package.json` to `dist/`
 - Copy `.env` as `.env` to `dist/`
 ## Run Production

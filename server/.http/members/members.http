@@ -1,0 +1,42 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### Get my member record (any user)
+GET {{baseUrl}}/members/me
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Update my phone number (any user)
+PUT {{baseUrl}}/members/me
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "phone": "0829999999" }
+
+### List members (Administrator)
+GET {{baseUrl}}/members
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Create member (Administrator)
+POST {{baseUrl}}/members
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "memberNumber": "M-1001", "email": "jane@example.com", "phone": "0821234567" }
+
+### Update member (Administrator)
+PUT {{baseUrl}}/members/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "phone": "0829999999" }
+
+### Deactivate member (Administrator)
+DELETE {{baseUrl}}/members/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

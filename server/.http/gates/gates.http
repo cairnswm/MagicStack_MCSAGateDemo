@@ -1,0 +1,70 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### List gates (Administrator: all; Gate Controller: only linked gates)
+GET {{baseUrl}}/gates?propertyId=1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Get gate
+GET {{baseUrl}}/gates/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Create gate (Administrator)
+POST {{baseUrl}}/gates
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "propertyId": 1, "name": "Main gate", "latitude": -33.9249, "longitude": 18.4241, "code": "1234" }
+
+### Update gate (Administrator)
+PUT {{baseUrl}}/gates/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "name": "Main gate", "latitude": -33.9249, "longitude": 18.4241 }
+
+### Change gate code (Administrator or Gate Controller) - audited
+PUT {{baseUrl}}/gates/1/code
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "code": "5678" }
+
+### Get gate QR link (Administrator)
+GET {{baseUrl}}/gates/1/access-token
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Regenerate gate QR link (Administrator) - confirmGateName must match the gate name
+POST {{baseUrl}}/gates/1/access-token/regenerate
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "confirmGateName": "Main gate" }
+
+### Resolve a scanned QR link (any signed-in user)
+GET {{baseUrl}}/access/PASTE_TOKEN_HERE
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Scan the gate's IN QR code: records/updates today's property access for this user (any signed-in user)
+POST {{baseUrl}}/access/PASTE_TOKEN_HERE/in
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Scan the gate's OUT QR code: updates the same record as the IN scan
+POST {{baseUrl}}/access/PASTE_TOKEN_HERE/out
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Deactivate gate (Administrator)
+DELETE {{baseUrl}}/gates/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

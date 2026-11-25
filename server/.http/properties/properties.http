@@ -1,0 +1,34 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### List properties (Administrator or Gate Controller)
+GET {{baseUrl}}/properties
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Get property
+GET {{baseUrl}}/properties/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Create property (Administrator)
+POST {{baseUrl}}/properties
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "name": "Hilltop Club" }
+
+### Update property (Administrator)
+PUT {{baseUrl}}/properties/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "name": "Hilltop Club", "active": true }
+
+### Deactivate property and its gates (Administrator)
+DELETE {{baseUrl}}/properties/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

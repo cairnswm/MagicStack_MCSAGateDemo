@@ -8,6 +8,12 @@ import tenantMiddleware from './middleware/tenantMiddleware';
 import tenantRouter from './routes/tenant';
 import sampleRouter from './routes/sample';
 import docsRouter from './routes/docs';
+import propertiesRouter from './routes/properties';
+import gatesRouter from './routes/gates';
+import gateAuditRouter from './routes/gateAudit';
+import membersRouter from './routes/members';
+import accessRouter from './routes/access';
+import gateControllersRouter from './routes/gateControllers';
 
 cache.setTenantId(process.env.TENANT_ID!);
 if (process.env.MAGICSTACK_CACHEY_API) {
@@ -68,6 +74,12 @@ app.use((req: Request, res: Response, next) => {
 app.use(`${BASE_PATH}/db`, dbRouter);
 app.use(`${BASE_PATH}/tenant`, tenantRouter);
 app.use(`${BASE_PATH}/sample`, sampleRouter);
+app.use(`${BASE_PATH}/properties`, propertiesRouter);
+app.use(`${BASE_PATH}/gates`, gatesRouter);
+app.use(`${BASE_PATH}/gate-audit`, gateAuditRouter);
+app.use(`${BASE_PATH}/members`, membersRouter);
+app.use(`${BASE_PATH}/access`, accessRouter);
+app.use(`${BASE_PATH}/gate-controllers`, gateControllersRouter);
 
 app.use(BASE_PATH || '/', docsRouter);
 app.use(`${BASE_PATH}/docs`, docsRouter);

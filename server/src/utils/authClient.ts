@@ -1,4 +1,4 @@
-const AUTH_API = process.env.MAGICSTACK_AUTH_API || '';
+const AUTH_API = process.env.MAGICSTACK_AUTH_API || 'https://auth.magicrunez.com';
 import { Request } from 'express';
 import cache from '@runeworkz/cache';
 import { getRequestId, getHostname, getContextTenantId, log } from './requestContext';

@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### List members linked to a gate (Administrator)
+GET {{baseUrl}}/gate-controllers?gateId=1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### Link a member to a gate (Administrator)
+POST {{baseUrl}}/gate-controllers
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+Content-Type: application/json
+
+{ "gateId": 1, "memberId": 1 }
+
+### Unlink (Administrator)
+DELETE {{baseUrl}}/gate-controllers/1
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:{{$dotenv PORT}}
+@tenantId = {{$dotenv TENANT_ID}}
+@bearerToken = {{$dotenv TEST_BEARER_TOKEN}}
+
+### My access history, last 30 days (any signed-in user)
+GET {{baseUrl}}/access/mine
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}
+
+### My access history, last 90 days
+GET {{baseUrl}}/access/mine?days=90
+X-Tenant-ID: {{tenantId}}
+Authorization: Bearer {{bearerToken}}

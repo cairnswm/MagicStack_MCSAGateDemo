@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: server/package-lock.json
 
       - name: Load .env from MagicStack (silent)
         run: |
@@ -26,15 +27,18 @@ jobs:
           # Download the .env file silently to a temp file (don't print contents)
           curl -fsS -H "X-API-KEY: ${{ secrets.API_KEY }}" \
             https://secrets.magicrunez.com/secrets/repos/actions-variables \
-            -o .env.tmp
+            -o server/.env.tmp
           # Move into place 
-          mv .env.tmp .env
+          mv server/.env.tmp server/.env
 
       - name: Install dependencies
+        working-directory: server
         run: npm install
 
       - name: Build project
+        working-directory: server
         run: npm run build
 
       - name: Deploy to server
+        working-directory: server
         run: npm run deploy
