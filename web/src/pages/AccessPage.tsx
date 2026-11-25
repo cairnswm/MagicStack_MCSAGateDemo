@@ -16,27 +16,30 @@ export default function AccessPage({ direction }: { direction?: AccessDirection 
   const { refreshMyAccess } = useData()
   const [gate, setGate] = useState<GateAccess | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const recorded = useRef('') // one scan per page visit, even if the effect re-runs (e.g. StrictMode)
+  const handled = useRef('') // one request per page visit, even if the effect re-runs (e.g. StrictMode)
+  // Latest values, read inside the effect without making it re-run: the data context reloads in the background
+  // (e.g. my access finishing its first load) and must never reset the gate code that is already on screen.
+  const latest = useRef({ api, refreshMyAccess })
+  latest.current = { api, refreshMyAccess }
+  const userId = user?.user.id
 
   useEffect(() => {
-    if (!user) return
+    if (userId === undefined) return
+    const key = `${userId}:${accessToken}:${direction ?? 'view'}`
+    if (handled.current === key) return
+    handled.current = key
     setGate(null)
     setError(null)
-    if (!direction) {
-      api.getGateAccess(accessToken).then(setGate).catch((e: Error) => setError(e.message))
-      return
-    }
-    const key = `${user.user.id}:${accessToken}:${direction}`
-    if (recorded.current === key) return
-    recorded.current = key
-    api.recordGateAccess(accessToken, direction).then((g) => {
+    const { api: client } = latest.current
+    const request = direction ? client.recordGateAccess(accessToken, direction) : client.getGateAccess(accessToken)
+    request.then((g) => {
       setGate(g)
-      void refreshMyAccess() // the scan changed the user's own access records
+      if (direction) void latest.current.refreshMyAccess() // the scan changed the user's own access records
     }).catch((e: Error) => {
-      recorded.current = ''
+      handled.current = ''
       setError(e.message)
     })
-  }, [api, user, accessToken, direction, refreshMyAccess])
+  }, [userId, accessToken, direction])
 
   if (initializing) {
     return (

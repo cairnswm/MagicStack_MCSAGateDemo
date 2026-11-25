@@ -128,7 +128,7 @@ export default function UsageReportPage() {
       {report && (
         <section className="space-y-6">
           <p className="text-xs text-blue-200">
-            Each day shows the people on site that day. Overnight is people whose out scan is on a later date, or who have not signed out.
+            Overnight is people whose out scan is on a later date, or who have not signed out. They are not counted as day visitors.
           </p>
           {months.map((m) => {
             const trail = (7 - ((m.lead + m.days.length) % 7)) % 7
@@ -149,7 +149,7 @@ export default function UsageReportPage() {
                         className={`flex items-center justify-between gap-3 px-4 py-3 sm:block sm:aspect-square sm:overflow-hidden sm:p-2 border-r border-b border-blue-800 text-white ${
                           d.count > 0 ? 'bg-blue-900' : 'bg-blue-950'
                         }`}
-                        title={`${parse(d.date).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}: ${d.count} on site, ${d.overnight} overnight`}
+                        title={`${parse(d.date).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}: ${d.dayVisitors} day visitors, ${d.overnight} overnight`}
                       >
                         <div className={`text-sm sm:text-xs font-semibold ${isToday ? 'inline-block rounded-full bg-red-500 px-1.5 text-white' : 'text-blue-200'}`}>
                           <span className="sm:hidden">{parse(d.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
@@ -157,7 +157,9 @@ export default function UsageReportPage() {
                         </div>
                         {d.count > 0 && (
                           <div className="space-y-0.5 text-right sm:text-left sm:mt-1 text-xs leading-tight">
-                            <div className="font-bold">{d.count} day {d.count === 1 ? 'visitor' : 'visitors'}</div>
+                            {d.dayVisitors > 0 && (
+                              <div className="font-bold">{d.dayVisitors} day {d.dayVisitors === 1 ? 'visitor' : 'visitors'}</div>
+                            )}
                             {d.overnight > 0 && <div className="text-orange-300">{d.overnight} overnight</div>}
                           </div>
                         )}

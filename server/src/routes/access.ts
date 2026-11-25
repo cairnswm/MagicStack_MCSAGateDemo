@@ -73,7 +73,7 @@ router.get('/:token', async (req: Request, res: Response) => {
 /**
  * POST /:token/in and /:token/out - the gate's "in" and "out" QR codes. Records the signed-in user's scan in
  * property_access: one row per user, gate and day, so a day's in and out scans share a record. Not idempotent by
- * design (repeat scans are harmless): 'in' keeps the day's first in_at, 'out' overwrites out_at with the latest.
+ * design (repeat scans are harmless): 'in' keeps the day's first in_at and clears out_at (re-entering means they are in again), 'out' overwrites out_at with the latest.
  * POST (not GET) so link previews and prefetchers cannot create records. Returns the gate and its code.
  */
 function recordScan(direction: 'in' | 'out') {
@@ -89,7 +89,7 @@ function recordScan(direction: 'in' | 'out') {
          VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ${direction === 'in' ? 'NOW()' : 'NULL'}, ${direction === 'out' ? 'NOW()' : 'NULL'})
          ON DUPLICATE KEY UPDATE
            user_name = VALUES(user_name), property_id = VALUES(property_id), status = VALUES(status),
-           ${direction === 'in' ? 'in_at = COALESCE(in_at, NOW())' : 'out_at = NOW()'}`,
+           ${direction === 'in' ? 'in_at = COALESCE(in_at, NOW()), out_at = NULL' : 'out_at = NOW()'}`,
         [auth.tenantId, auth.userId, auth.userName, gate.property_id, gate.id, direction],
       );
       const rows = await query<any[]>(

@@ -142,6 +142,7 @@ export interface AccessNowProperty {
 export interface UsageDay {
   date: string
   count: number
+  dayVisitors: number
   overnight: number
 }
 

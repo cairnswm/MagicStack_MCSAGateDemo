@@ -2,11 +2,13 @@ import { Router, Request, Response } from 'express';
 import { query } from '../utils/db';
 import { errorResponse, successResponse } from '../utils/formatters';
 import { adminOnly, getAuth, requireAuth } from '../middleware/auth';
+import { buildStays } from '../utils/stays';
 
 const router = Router();
 router.use(requireAuth as any);
 
 const MAX_ROWS = 5000;
+const dayMs = 86400000;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const fail = (res: Response, err: unknown) =>
@@ -56,14 +58,16 @@ router.get('/property-access', adminOnly, async (req: Request, res: Response) =>
 });
 
 /**
- * GET /access-now - who is on each active property, bucketed by how long ago they entered without leaving.
- * Administrator only. Age is whole days between today and the record's access_date:
- *   todayIn   - entered today and still in (age 0, latest scan is an in)
- *   todayOut  - entered today and has since left (age 0, latest scan is an out)
- *   yesterday - entered yesterday and not out (age 1)
+ * GET /access-now - who is on each active property, bucketed by how long ago they entered.
+ * Administrator only. Stays are built by pairing each 'in' scan with the person's next 'out' scan at the property
+ * (see utils/stays.ts), so an overnight stay whose out is on a later day is closed. Age is whole days from the
+ * stay's start date to today:
+ *   todayIn   - entered today and still in
+ *   todayOut  - entered today and has since left
+ *   yesterday - entered yesterday and not out
  *   week      - entered 2 to 7 days ago and not out
  *   overdue   - entered more than 7 days ago and not out
- * "Not out" means the latest scan is an in (status = 'in'). Counts are distinct people; each bucket also lists them.
+ * Counts are distinct people; each bucket also lists them.
  */
 router.get('/access-now', adminOnly, async (_req: Request, res: Response) => {
   try {
@@ -72,45 +76,50 @@ router.get('/access-now', adminOnly, async (_req: Request, res: Response) => {
       'SELECT id, name FROM properties WHERE tenant_id = ? AND active = 1 ORDER BY name',
       [tenantId],
     );
+    const [{ today }] = await query<any[]>(`SELECT DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS today`);
+    // Every scan of anyone who scanned today or has an 'in' row, so their later out scans pair with their ins.
     const rows = await query<any[]>(
-      `SELECT pa.property_id, pa.user_id, pa.user_name, g.name AS gate_name, pa.in_at, pa.status,
-              DATEDIFF(CURDATE(), pa.access_date) AS age_days
+      `SELECT pa.property_id, pa.user_id, pa.user_name, g.name AS gate_name,
+              DATE_FORMAT(pa.in_at, '%Y-%m-%d %H:%i:%s') AS in_at, DATE_FORMAT(pa.out_at, '%Y-%m-%d %H:%i:%s') AS out_at
          FROM property_access pa
          LEFT JOIN gates g ON g.id = pa.gate_id AND g.tenant_id = pa.tenant_id
         WHERE pa.tenant_id = ?
-          AND ((pa.access_date = CURDATE() AND pa.in_at IS NOT NULL)
-               OR (pa.access_date < CURDATE() AND pa.status = 'in'))
-        ORDER BY pa.in_at DESC`,
-      [tenantId],
+          AND pa.user_id IN (SELECT user_id FROM property_access
+                              WHERE tenant_id = ? AND (access_date = CURDATE() OR status = 'in'))`,
+      [tenantId, tenantId],
     );
 
-    const bucketOf = (r: any) => {
-      const age = Number(r.age_days);
-      if (age <= 0) return r.status === 'in' ? 'todayIn' : 'todayOut';
-      return age === 1 ? 'yesterday' : age <= 7 ? 'week' : 'overdue';
-    };
-    const result = properties.map((p) => {
-      const buckets: Record<string, any[]> = { todayIn: [], todayOut: [], yesterday: [], week: [], overdue: [] };
-      for (const r of rows.filter((x) => x.property_id === p.id)) {
-        buckets[bucketOf(r)].push({
-          userId: r.user_id,
-          userName: r.user_name,
-          gateName: r.gate_name,
-          inAt: r.in_at,
-        });
-      }
-      const summary = (people: any[]) => ({
-        count: new Set(people.map((x) => x.userId)).size,
-        people,
+    const buckets = new Map<number, Record<string, any[]>>();
+    for (const p of properties) {
+      buckets.set(p.id, { todayIn: [], todayOut: [], yesterday: [], week: [], overdue: [] });
+    }
+    for (const stay of buildStays(rows).sort((a, b) => b.start.localeCompare(a.start))) {
+      const target = buckets.get(stay.propertyId);
+      if (!target) continue;
+      const age = Math.round((Date.parse(today) - Date.parse(stay.start.slice(0, 10))) / dayMs);
+      let bucket: string | null;
+      if (age <= 0) bucket = stay.end ? 'todayOut' : 'todayIn';
+      else if (stay.end) bucket = null; // left on an earlier day: not on site
+      else bucket = age === 1 ? 'yesterday' : age <= 7 ? 'week' : 'overdue';
+      if (!bucket) continue;
+      target[bucket].push({
+        userId: stay.userId,
+        userName: stay.startRow.user_name,
+        gateName: stay.startRow.gate_name,
+        inAt: stay.start.replace(' ', 'T'),
       });
+    }
+    const summary = (people: any[]) => ({ count: new Set(people.map((x) => x.userId)).size, people });
+    const result = properties.map((p) => {
+      const b = buckets.get(p.id)!;
       return {
         propertyId: p.id,
         propertyName: p.name,
-        todayIn: summary(buckets.todayIn),
-        todayOut: summary(buckets.todayOut),
-        yesterday: summary(buckets.yesterday),
-        week: summary(buckets.week),
-        overdue: summary(buckets.overdue),
+        todayIn: summary(b.todayIn),
+        todayOut: summary(b.todayOut),
+        yesterday: summary(b.yesterday),
+        week: summary(b.week),
+        overdue: summary(b.overdue),
       };
     });
     res.set('Cache-Control', 'no-store');
@@ -122,14 +131,14 @@ router.get('/access-now', adminOnly, async (_req: Request, res: Response) => {
 
 const MAX_USAGE_DAYS = 366;
 const LOOKBACK_DAYS = 60;
-const dayMs = 86400000;
 const addDays = (date: string, n: number) => new Date(Date.parse(date) + n * dayMs).toISOString().slice(0, 10);
 
 /**
  * GET /usage?from=YYYY-MM-DD&to=YYYY-MM-DD[&propertyId=] - how many distinct people were on site each day.
  * Administrator only; defaults to the last 30 days, all properties. Per day:
- *   count     - people on site at any point that day
- *   overnight - people whose stay continues past that day (their out scan is on a later date, or they have not
+ *   count        - people on site at any point that day (day visitors plus overnight)
+ *   dayVisitors  - people on site that day who are not staying the night
+ *   overnight    - people whose stay continues past that day (their out scan is on a later date, or they have not
  *               signed out yet)
  * A stay runs from an 'in' scan to the next 'out' scan for the same person at the same property (any gate). A stay
  * with no out scan runs to today. Visits starting up to 60 days before `from` are considered so long stays show.
@@ -160,37 +169,25 @@ router.get('/usage', adminOnly, async (req: Request, res: Response) => {
       params,
     );
 
-    // Turn each person's scans (per property) into stays, then mark the days each stay covers.
-    const scans = new Map<string, { at: string; kind: 'in' | 'out' }[]>();
-    for (const r of rows) {
-      const key = `${r.property_id}:${r.user_id}`;
-      const list = scans.get(key) ?? scans.set(key, []).get(key)!;
-      if (r.in_at) list.push({ at: r.in_at, kind: 'in' });
-      if (r.out_at) list.push({ at: r.out_at, kind: 'out' });
-    }
+    // Mark the days each stay covers (an open stay runs to today).
     const days = new Map<string, { present: Set<number>; overnight: Set<number> }>();
     for (let d = from; d <= to; d = addDays(d, 1)) days.set(d, { present: new Set(), overnight: new Set() });
-    const addStay = (userId: number, start: string, end: string) => {
+    for (const stay of buildStays(rows)) {
+      const start = stay.start.slice(0, 10);
+      const end = (stay.end ?? today).slice(0, 10);
       for (let d = start < from ? from : start; d <= end && d <= to; d = addDays(d, 1)) {
         const day = days.get(d)!;
-        day.present.add(userId);
-        if (d < end) day.overnight.add(userId);
+        day.present.add(stay.userId);
+        if (d < end) day.overnight.add(stay.userId);
       }
-    };
-    for (const [key, list] of scans) {
-      const userId = Number(key.split(':')[1]);
-      let start: string | null = null;
-      for (const s of list.sort((a, b) => a.at.localeCompare(b.at))) {
-        if (s.kind === 'in') start = start ?? s.at.slice(0, 10);
-        else if (start) {
-          addStay(userId, start, s.at.slice(0, 10));
-          start = null;
-        }
-      }
-      if (start) addStay(userId, start, today);
     }
 
-    const result = [...days].map(([date, d]) => ({ date, count: d.present.size, overnight: d.overnight.size }));
+    const result = [...days].map(([date, d]) => ({
+      date,
+      count: d.present.size,
+      dayVisitors: d.present.size - d.overnight.size,
+      overnight: d.overnight.size,
+    }));
     res.set('Cache-Control', 'no-store');
     return res.json(successResponse({ from, to, propertyId, days: result }));
   } catch (err) {
